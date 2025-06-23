@@ -1,43 +1,35 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
-from typing import List, Union
-import torch
-import torch.nn.functional as F
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import streamlit as st
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
+import torch.nn.functional as F
 
 st.title("Sentiment Analysis App")
 
-# Your Streamlit app code here
+# Load model and tokenizer (you can cache this)
+@st.cache_resource
+def load_model():
+    tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased-finetuned-sst-2-english")
+    model = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased-finetuned-sst-2-english")
+    return tokenizer, model
+
+tokenizer, model = load_model()
+
+# User input
 text = st.text_input("Enter text for sentiment analysis:")
-if st.button("Analyze"):
-    # Your model code here
-    st.write("Analysis result will appear here")app = FastAPI(title="Sentiment-API")
 
-MODEL_NAME = "distilbert-base-uncased-finetuned-sst-2-english"
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME)
-model.eval()
-
-class TextIn(BaseModel):
-    text: Union[str, List[str]]
-
-@app.post("/predict")
-def predict(payload: TextIn):
-    texts = [payload.text] if isinstance(payload.text, str) else payload.text
-    inputs = tokenizer(texts, padding=True, truncation=True, return_tensors="pt")
-    with torch.no_grad():
-        logits = model(**inputs).logits
-        probs  = F.softmax(logits, dim=1)
-    labels = probs.argmax(dim=1)
-    id2label = model.config.id2label
-    return [
-        {"label": id2label[int(i)], "score": float(p)}
-        for i, p in zip(labels, probs.max(dim=1).values)
-    ]
-
-@app.get("/")
-def root():
-    return {"msg": "ok"}
+if st.button("Analyze Sentiment"):
+    if text:
+        # Tokenize and predict
+        inputs = tokenizer(text, return_tensors="pt", truncation=True, padding=True)
+        with torch.no_grad():
+            outputs = model(**inputs)
+        
+        # Get prediction
+        predictions = F.softmax(outputs.logits, dim=-1)
+        sentiment = "Positive" if predictions[0][1] > predictions[0][0] else "Negative"
+        confidence = max(predictions[0]).item()
+        
+        st.write(f"**Sentiment:** {sentiment}")
+        st.write(f"**Confidence:** {confidence:.2%}")
+    else:
+        st.write("Please enter some text to analyze.")
