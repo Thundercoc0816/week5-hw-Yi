@@ -1,4 +1,5 @@
+streamlit
+transformers>=4.21.0
+torch
 fastapi
 uvicorn
-transformers
-torch
