@@ -4,8 +4,17 @@ from typing import List, Union
 import torch
 import torch.nn.functional as F
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
+import streamlit as st
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+import torch
 
-app = FastAPI(title="Sentiment-API")
+st.title("Sentiment Analysis App")
+
+# Your Streamlit app code here
+text = st.text_input("Enter text for sentiment analysis:")
+if st.button("Analyze"):
+    # Your model code here
+    st.write("Analysis result will appear here")app = FastAPI(title="Sentiment-API")
 
 MODEL_NAME = "distilbert-base-uncased-finetuned-sst-2-english"
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
