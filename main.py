@@ -101,9 +101,9 @@ tokenizer, model = load_model()
 text = st.text_input("Enter text for sentiment analysis:", 
                     placeholder="e.g., I love this product but the delivery was terrible!")
 
-if st.button("🔍 Analyze Text") and text:
+if st.button(" Analyze Text") and text:
     # Basic word count statistics
-    st.subheader("📊 Text Statistics")
+    st.subheader(" Text Statistics")
     
     words = text.split()
     word_count = len(words)
@@ -127,7 +127,7 @@ if st.button("🔍 Analyze Text") and text:
     st.dataframe(freq_df, use_container_width=True)
     
     # Sentiment Analysis
-    st.subheader("🎭 Sentiment Analysis")
+    st.subheader(" Sentiment Analysis")
     
     clean_text = preprocess_text(text)
     inputs = tokenizer(clean_text, return_tensors="pt", truncation=True, padding=True)
@@ -155,7 +155,7 @@ if st.button("🔍 Analyze Text") and text:
         st.metric("Positive", f"{predictions[0][2].item():.1%}")
     
     # Word Importance Analysis
-    st.subheader("🔍 Word Influence Analysis")
+    st.subheader(" Word Influence Analysis")
     st.write("See which words most influence the sentiment prediction:")
     
     with st.spinner("Analyzing word importance..."):
@@ -180,12 +180,12 @@ if st.button("🔍 Analyze Text") and text:
             # Classify words by sentiment type
             positive_words, negative_words, neutral_words = classify_words_by_sentiment(words, importances)
             
-            st.subheader("📝 Words by Sentiment Category")
+            st.subheader(" Words by Sentiment Category")
             
             col1, col2, col3 = st.columns(3)
             
             with col1:
-                st.write("🟢 **Positive Words:**")
+                st.write(" **Positive Words:**")
                 if positive_words:
                     for word, importance in sorted(positive_words, key=lambda x: x[1], reverse=True)[:5]:
                         st.write(f"• {word} (influence: {importance:.3f})")
@@ -193,7 +193,7 @@ if st.button("🔍 Analyze Text") and text:
                     st.write("No strong positive words detected")
             
             with col2:
-                st.write("🔴 **Negative Words:**")
+                st.write(" **Negative Words:**")
                 if negative_words:
                     for word, importance in sorted(negative_words, key=lambda x: x[1], reverse=True)[:5]:
                         st.write(f"• {word} (influence: {importance:.3f})")
@@ -201,7 +201,7 @@ if st.button("🔍 Analyze Text") and text:
                     st.write("No strong negative words detected")
             
             with col3:
-                st.write("🟡 **Neutral/Other Words:**")
+                st.write(" **Neutral/Other Words:**")
                 if neutral_words:
                     top_neutral = sorted(neutral_words, key=lambda x: x[1], reverse=True)[:5]
                     for word, importance in top_neutral:
@@ -210,7 +210,7 @@ if st.button("🔍 Analyze Text") and text:
                     st.write("No neutral words")
             
             # Summary insights
-            st.subheader("💡 Analysis Summary")
+            st.subheader(" Analysis Summary")
             
             high_influence_words = [word for word, imp in zip(words, importances) if imp > 0.05]
             avg_importance = np.mean(importances) if importances else 0
@@ -220,13 +220,13 @@ if st.button("🔍 Analyze Text") and text:
                 insights.append(f"🎯 **Key words driving sentiment:** {', '.join(high_influence_words[:3])}")
             
             if positive_words and negative_words:
-                insights.append("⚖️ **Mixed sentiment detected** - text contains both positive and negative elements")
+                insights.append("⚖ **Mixed sentiment detected** - text contains both positive and negative elements")
             elif positive_words:
-                insights.append("😊 **Predominantly positive language** detected")
+                insights.append(" **Predominantly positive language** detected")
             elif negative_words:
-                insights.append("😔 **Predominantly negative language** detected")
+                insights.append(" **Predominantly negative language** detected")
             
-            insights.append(f"📈 **Average word influence:** {avg_importance:.3f}")
+            insights.append(f" **Average word influence:** {avg_importance:.3f}")
             
             for insight in insights:
                 st.write(insight)
@@ -234,10 +234,10 @@ if st.button("🔍 Analyze Text") and text:
             st.warning("Could not analyze word importance. Please try with a longer text.")
 
 elif text == "":
-    st.info("👆 Enter some text above to see detailed sentiment analysis with word breakdown!")
+    st.info(" Enter some text above to see detailed sentiment analysis with word breakdown!")
 
 # Add some example texts
-st.subheader("💡 Try these examples:")
+st.subheader(" Try these examples:")
 examples = [
     "I love this product but the delivery was terrible!",
     "The movie was amazing and the acting was brilliant.",
