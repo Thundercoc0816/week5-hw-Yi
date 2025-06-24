@@ -7,7 +7,7 @@ from collections import Counter
 import pandas as pd
 import numpy as np
 
-st.title("🎯 Enhanced Sentiment Analysis with Word Breakdown")
+st.title("Sentiment Analysis")
 st.write("Analyze sentiment and see which words influence the prediction!")
 
 @st.cache_resource
