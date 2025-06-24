@@ -2,38 +2,127 @@ import streamlit as st
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 import torch.nn.functional as F
+import re
+from collections import Counter
+import pandas as pd
+import numpy as np
 
-st.title("Sentiment Analysis App")
+st.title("🎯 Enhanced Sentiment Analysis with Word Breakdown")
+st.write("Analyze sentiment and see which words influence the prediction!")
 
-# Load model and tokenizer (you can cache this)
 @st.cache_resource
 def load_model():
-    tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased-finetuned-sst-2-english")
-    model = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased-finetuned-sst-2-english")
+    model_name = "cardiffnlp/twitter-roberta-base-sentiment-latest"
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForSequenceClassification.from_pretrained(model_name)
     return tokenizer, model
 
+def preprocess_text(text):
+    # Clean but preserve important punctuation for sentiment
+    text = re.sub(r'http\S+', '', text)
+    text = re.sub(r'@\w+', '', text)
+    text = re.sub(r'#(\w+)', r'\1', text)  # Remove # but keep the word
+    text = ' '.join(text.split())
+    return text.strip()
+
+def get_word_importance(text, tokenizer, model):
+    """Calculate importance of each word for sentiment prediction"""
+    clean_text = preprocess_text(text)
+    words = clean_text.split()
+    
+    if len(words) == 0:
+        return [], []
+    
+    # Get baseline prediction for full text
+    inputs = tokenizer(clean_text, return_tensors="pt", truncation=True, padding=True)
+    with torch.no_grad():
+        baseline_outputs = model(**inputs)
+    baseline_probs = F.softmax(baseline_outputs.logits, dim=-1)
+    
+    word_importances = []
+    
+    # Calculate importance by removing each word
+    for i, word in enumerate(words):
+        # Create text without this word
+        text_without_word = ' '.join(words[:i] + words[i+1:])
+        
+        if text_without_word.strip():
+            inputs_without = tokenizer(text_without_word, return_tensors="pt", truncation=True, padding=True)
+            with torch.no_grad():
+                outputs_without = model(**inputs_without)
+            probs_without = F.softmax(outputs_without.logits, dim=-1)
+            
+            # Calculate difference in probabilities
+            prob_diff = torch.abs(baseline_probs - probs_without).max().item()
+            word_importances.append(prob_diff)
+        else:
+            word_importances.append(0)
+    
+    return words, word_importances
+
+def classify_words_by_sentiment(words, importances, threshold=0.01):
+    """Classify words as positive, negative, or neutral based on their importance"""
+    positive_words = []
+    negative_words = []
+    neutral_words = []
+    
+    # Simple heuristic classification based on common sentiment words
+    positive_indicators = {
+        'good', 'great', 'excellent', 'amazing', 'wonderful', 'fantastic', 'love', 'like', 
+        'best', 'awesome', 'perfect', 'beautiful', 'happy', 'pleased', 'satisfied',
+        'brilliant', 'outstanding', 'superb', 'magnificent', 'incredible', 'remarkable'
+    }
+    
+    negative_indicators = {
+        'bad', 'terrible', 'awful', 'horrible', 'hate', 'dislike', 'worst', 'disgusting',
+        'disappointing', 'sad', 'angry', 'frustrated', 'annoying', 'boring', 'stupid',
+        'useless', 'pathetic', 'ridiculous', 'outrageous', 'unacceptable', 'dreadful'
+    }
+    
+    for word, importance in zip(words, importances):
+        word_lower = word.lower().strip('.,!?;:"')
+        
+        if importance > threshold:
+            if word_lower in positive_indicators:
+                positive_words.append((word, importance))
+            elif word_lower in negative_indicators:
+                negative_words.append((word, importance))
+            else:
+                neutral_words.append((word, importance))
+        else:
+            neutral_words.append((word, importance))
+    
+    return positive_words, negative_words, neutral_words
+
+# Load model
 tokenizer, model = load_model()
 
 # User input
-text = st.text_input("Enter text for sentiment analysis:")
+text = st.text_input("Enter text for sentiment analysis:", 
+                    placeholder="e.g., I love this product but the delivery was terrible!")
 
-if st.button("Analyze Sentiment"):
-    if text:
-        # Tokenize and predict
-        inputs = tokenizer(text, return_tensors="pt", truncation=True, padding=True)
-        with torch.no_grad():
-            outputs = model(**inputs)
-        
-        # Get prediction
-        predictions = F.softmax(outputs.logits, dim=-1)
-        sentiment = "Positive" if predictions[0][1] > predictions[0][0] else "Negative"
-        confidence = max(predictions[0]).item()
-        
-        st.write(f"**Sentiment:** {sentiment}")
-        st.write(f"**Confidence:** {confidence:.2%}")
-    else:
-        st.write("Please enter some text to analyze.")
-st.write("**Most Frequent Words:**")
+if st.button("🔍 Analyze Text") and text:
+    # Basic word count statistics
+    st.subheader("📊 Text Statistics")
+    
+    words = text.split()
+    word_count = len(words)
+    char_count = len(text)
+    unique_words = len(set(word.lower().strip('.,!?;:"') for word in words))
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Total Words", word_count)
+    with col2:
+        st.metric("Characters", char_count)
+    with col3:
+        st.metric("Unique Words", unique_words)
+    
+    # Word frequency
+    word_freq = Counter(word.lower().strip('.,!?;:"') for word in words)
+    most_common = word_freq.most_common(5)
+    
+    st.write("**Most Frequent Words:**")
     freq_df = pd.DataFrame(most_common, columns=['Word', 'Count'])
     st.dataframe(freq_df, use_container_width=True)
     
@@ -158,4 +247,4 @@ examples = [
 
 for i, example in enumerate(examples):
     if st.button(f"Example {i+1}: {example[:50]}...", key=f"example_{i}"):
-        st.rerun()
+        st.text_input("Enter text for sentiment analysis:", value=example, key=f"input_{i}")
