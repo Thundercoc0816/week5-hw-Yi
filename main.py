@@ -217,7 +217,7 @@ if st.button(" Analyze Text") and text:
             
             insights = []
             if high_influence_words:
-                insights.append(f"🎯 **Key words driving sentiment:** {', '.join(high_influence_words[:3])}")
+                insights.append(f" **Key words driving sentiment:** {', '.join(high_influence_words[:3])}")
             
             if positive_words and negative_words:
                 insights.append("⚖ **Mixed sentiment detected** - text contains both positive and negative elements")
