@@ -141,7 +141,7 @@ if st.button(" Analyze Text") and text:
     confidence = predictions[0][predicted_class].item()
     
     # Display sentiment result
-    sentiment_color = {"Negative": "🔴", "Neutral": "🟡", "Positive": "🟢"}
+    sentiment_color = {"Negative": "", "Neutral": "", "Positive": ""}
     st.write(f"### {sentiment_color[labels[predicted_class]]} **Sentiment: {labels[predicted_class]}**")
     st.write(f"**Confidence: {confidence:.1%}**")
     
